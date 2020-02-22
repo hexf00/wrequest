@@ -27,6 +27,16 @@ api({
   keyword: 'test'
 })
   
+
+  // 增加请求延时
+  .debug.delay(1000)
+
+  // 使请求成功
+  .debug.success([{ id: '1', name: 'test' }])
+  
+  // 使请求失败
+  .debug.fail('测试错误')
+
   // 二次处理结果
   .map(data => {
     return data.map(item => {
