@@ -9,7 +9,7 @@ function request<req, res>(config: AxiosRequestConfig) {
   return (data: req) => new WRequest(() => service({
     ...config,
     data
-  }) as unknown as Promise<res>)
+  }).then(response => response.data) as Promise<res>)
 }
 
 /**
