@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "outDir": "./dist",
+    "noImplicitThis": true,
+    "strict": true,
+    "declaration": true,
+    "allowSyntheticDefaultImports": true,
+    "experimentalDecorators": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "sourceMap": false,
+    "module": "CommonJS",
+    "target": "es5",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"],
+    },
+    "lib": [
+      "esnext",
+      "DOM",
+      "scripthost"
+    ]
+  },
+  "exclude": [
+    "node_modules"
+  ]
+}
