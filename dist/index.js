@@ -58,15 +58,28 @@ var WRequest = /** @class */ (function () {
                 return _this;
             },
             success: function (data) {
-                _this.promiseTransforms.push(function (generator, callback) {
+                _this.promiseTransforms.push(function (_, callback) {
                     callback(function () { return Promise.resolve(data); });
                 });
                 return _this;
             },
             fail: function (error) {
-                _this.promiseTransforms.push(function (generator, callback) {
+                _this.promiseTransforms.push(function (_, callback) {
                     callback(function () { return Promise.reject(error); });
                 });
+                return _this;
+            }
+        };
+        this.status = {
+            loading: function (callback) {
+                _this.load(function () { return callback(true); });
+                _this.final(function () { return callback(false); });
+                return _this;
+            },
+            error: function (calllback) {
+                _this.load(function () { return calllback(''); });
+                _this.fail(function (error) { return calllback(error); });
+                _this.success(function () { return (calllback(''), void 0); });
                 return _this;
             }
         };
@@ -81,10 +94,10 @@ var WRequest = /** @class */ (function () {
                         _loop_1 = function (transform) {
                             return __generator(this, function (_a) {
                                 switch (_a.label) {
-                                    case 0: return [4 /*yield*/, new Promise(function (resolve) {
+                                    case 0: return [4 /*yield*/, new Promise(function (r) {
                                             transform(generator, function (g) {
                                                 generator = g;
-                                                resolve();
+                                                r();
                                             });
                                         })];
                                     case 1:
@@ -115,12 +128,12 @@ var WRequest = /** @class */ (function () {
     WRequest.prototype.query = function () {
         var _this = this;
         var _a, _b;
-        var index = (_b = (_a = this.myState) === null || _a === void 0 ? void 0 : _a.next(), (_b !== null && _b !== void 0 ? _b : 0));
+        var index = (_b = (_a = this.myState) === null || _a === void 0 ? void 0 : _a.next()) !== null && _b !== void 0 ? _b : 0;
         for (var _i = 0, _c = this.loadCallback; _i < _c.length; _i++) {
             var load = _c[_i];
             load();
         }
-        var generator = function () { return _this.generator(); };
+        var generator = function () { var _a, _b; return (_b = (_a = _this.myState) === null || _a === void 0 ? void 0 : _a.getCache()) !== null && _b !== void 0 ? _b : _this.generator(); };
         if (this.promiseTransforms.length) {
             this.transformPromise(generator, function (generator) {
                 _this.handle(generator(), index);
@@ -132,6 +145,16 @@ var WRequest = /** @class */ (function () {
     };
     WRequest.prototype.handle = function (api, index) {
         var _this = this;
+        // if (this.promiseTransforms.length > 0) {
+        //   promise = new Promise((resolve) => {
+        //     for (const transform of this.promiseTransforms.reverse()) {
+        //       promise = transform(new Promise((resolve) => {
+        //         resolve(promise)
+        //       }))
+        //     }
+        //     resolve(promise)
+        //   })
+        // }
         return api.then(function (data) { return __awaiter(_this, void 0, void 0, function () {
             var _i, _a, handler, result, result;
             var _b;
@@ -194,7 +217,7 @@ var WRequest = /** @class */ (function () {
                 }
             }
             else {
-                console.log('运行错误', error);
+                console.log('未知的错误', error);
             }
         }).finally(function () {
             var _a;

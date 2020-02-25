@@ -10,6 +10,7 @@ declare type generator<T> = () => Promise<T>;
 export interface IWRequestState<T = any> {
     next(): number;
     isValid(index: number): boolean;
+    getCache(): Promise<T> | undefined;
     status: {
         loading: boolean;
         error: string;
@@ -37,6 +38,10 @@ export default class WRequest<T> {
         delay(time?: number): WRequest<T>;
         success(data: T): WRequest<T>;
         fail(error: string): WRequest<T>;
+    };
+    status: {
+        loading(callback: (loading: boolean) => void): WRequest<T>;
+        error(callback: (error: string) => string | void): WRequest<T>;
     };
     private myState?;
     constructor(generator: generator<T>);

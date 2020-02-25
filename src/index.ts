@@ -8,6 +8,7 @@ type generator<T> = () => Promise<T>
 export interface IWRequestState<T = any> {
   next(): number
   isValid(index: number): boolean
+  getCache(): Promise<T>|undefined
 
   status: {
     loading: boolean
@@ -48,6 +49,10 @@ export default class WRequest<T> {
     success(data: T): WRequest<T>
     fail(error: string): WRequest<T>
   }
+  public status: {
+    loading(callback: (loading: boolean) => void): WRequest<T>
+    error(callback: (error: string) => string|void): WRequest<T>
+  }
   private myState?: IWRequestState<T>
   constructor(private generator: generator<T>) {
     this.debug = {
@@ -62,15 +67,28 @@ export default class WRequest<T> {
         return this
       },
       success: (data) => {
-        this.promiseTransforms.push((generator, callback) => {
+        this.promiseTransforms.push((_, callback) => {
           callback(() => Promise.resolve(data))
         })
         return this
       },
       fail: error => {
-        this.promiseTransforms.push((generator, callback) => {
+        this.promiseTransforms.push((_, callback) => {
           callback(() => Promise.reject(error))
         })
+        return this
+      }
+    }
+    this.status = {
+      loading: callback => {
+        this.load(() => callback(true))
+        this.final(() => callback(false))
+        return this
+      },
+      error: calllback => {
+        this.load(() => calllback(''))
+        this.fail((error) => calllback(error))
+        this.success(() => (calllback(''), void 0))
         return this
       }
     }
@@ -78,10 +96,10 @@ export default class WRequest<T> {
   }
   private async transformPromise(generator: generator<T>, callback: (generator: generator<T>) => void) { 
     for (const transform of this.promiseTransforms) {
-      await new Promise(resolve => {
+      await new Promise(r => {
         transform(generator, g => {
           generator = g
-          resolve()
+          r()
         })
       })
     }
@@ -92,7 +110,7 @@ export default class WRequest<T> {
     for (const load of this.loadCallback) {
       load()
     }
-    const generator = () => this.generator()
+    const generator = () => { return this.myState?.getCache() ?? this.generator() }
     if (this.promiseTransforms.length) {
       this.transformPromise(generator, generator => {
         this.handle(generator(), index)
@@ -100,8 +118,19 @@ export default class WRequest<T> {
     } else {
       this.handle(generator(), index)
     }
+    
   }
   private handle(api: Promise<T>, index: number) {
+    // if (this.promiseTransforms.length > 0) {
+    //   promise = new Promise((resolve) => {
+    //     for (const transform of this.promiseTransforms.reverse()) {
+    //       promise = transform(new Promise((resolve) => {
+    //         resolve(promise)
+    //       }))
+    //     }
+    //     resolve(promise)
+    //   })
+    // }
     return api.then(async (data) => {
       if (this.myState?.isValid(index) === false) {
         return console.log('重复的请求')
@@ -139,7 +168,7 @@ export default class WRequest<T> {
           }
         }
       } else {
-        console.log('运行错误', error)
+        console.log('未知的错误', error)
       }
     }).finally(() => {
       if (this.myState?.isValid(index) === false) {
